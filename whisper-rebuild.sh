@@ -10,7 +10,7 @@ pushd ~/dev/github/ggerganov/whisper.cpp
 git pull
 
 # switch to the python virtual environment and activate it
-virtualenv venv --clear
+virtualenv venv --clear --no-setuptools --no-wheel
 source ./venv/bin/activate
 
 # install the required packages
@@ -24,6 +24,9 @@ make clean
 
 # build whisper.cpp with Core ML support
 WHISPER_COREML=1 make -j
+
+# deactivate the virtual environment
+deactivate
 
 # get back to the initial directory
 popd
