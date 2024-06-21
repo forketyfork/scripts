@@ -10,8 +10,7 @@ pushd ~/dev/github/ggerganov/whisper.cpp
 git pull
 
 # switch to the python virtual environment and activate it
-rm -rf ./venv
-virtualenv venv
+virtualenv venv --clear
 source ./venv/bin/activate
 
 # install the required packages
