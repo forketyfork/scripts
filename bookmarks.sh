@@ -5,6 +5,7 @@
 # by reading and parsing the plist file each time.
 # A better alternative would be to parse the file and extract all URLs at once,
 # but this script gets the job done.
+# It currently fails silently if there are no articles in the list.
 
 set -eu
 
