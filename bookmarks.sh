@@ -31,6 +31,7 @@ do
     if [ "$title" = $reading_list_title ]
     then
         reading_list_idx=$i
+        break
     fi
 done
 
