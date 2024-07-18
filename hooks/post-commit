@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+# update the index in case some files were formatted on the pre-commit stage
+git update-index -g

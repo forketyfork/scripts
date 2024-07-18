@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+# find all .sh files changed in the current commit
+FILES=$(git diff --cached --name-only --diff-filter=ACMR -- '***.sh' | sed 's| |\\ |g')
+[ -z "$FILES" ] && exit 0
+# format the files
+echo "$FILES" | xargs shfmt -l -w
+# run shell check
+echo "$FILES" | xargs shellcheck
+# add changed files to the commit
+echo "$FILES" | xargs git add
+
