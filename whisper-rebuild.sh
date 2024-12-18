@@ -19,11 +19,10 @@ pip install ane_transformers openai-whisper coremltools
 # generate the large-v3 model
 ./models/generate-coreml-model.sh large-v3
 
-# clean the build artifacts
-make clean
+# Build whisper with CoreML support
+cmake -B build -DWHISPER_COREML=1
 
-# build whisper.cpp with Core ML support
-WHISPER_COREML=1 make -j
+cmake --build build -j --config Release
 
 # deactivate the virtual environment
 deactivate
