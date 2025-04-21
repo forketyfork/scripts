@@ -4,7 +4,7 @@
 set -eu
 
 # go to the project directory
-pushd ~/dev/github/ggerganov/whisper.cpp
+pushd ~/dev/github/ggml-org/whisper.cpp
 
 # pull the latest revision (assuming we're on master)
 git pull

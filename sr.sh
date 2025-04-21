@@ -19,7 +19,16 @@ whisper_cpp_path="$HOME/dev/github/ggerganov/whisper.cpp"
 ffmpeg -i "${filename}" -ac 1 -ar 16000 "${filename_wav}"
 
 # run the speech recognition with large-v3 model
-"${whisper_cpp_path}/build/bin/main" -m "${whisper_cpp_path}/models/ggml-large-v3.bin" -f "${filename_wav}" --print-colors --language "${language}" --no-timestamps
+# settings to avoid the v3 model repeating stuff, taken from https://github.com/ggml-org/whisper.cpp/issues/1507#issuecomment-1816263320
+"${whisper_cpp_path}/build/bin/whisper-cli" \
+    -m "${whisper_cpp_path}/models/ggml-large-v3.bin" \
+    -f "${filename_wav}" \
+    --print-colors \
+    --language "${language}" \
+    --no-timestamps \
+    --entropy-thold 2.8 \
+    --max-context 64 \
+    --beam-size 5
 
 # remove the temporary wav file
 rm "${filename_wav}"
