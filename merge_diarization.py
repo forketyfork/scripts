@@ -45,7 +45,7 @@ def parse_srt(path):
                     raise ValueError(f"Bad SRT time in block: {block}")
                 start_secs = hms_to_seconds(*start_match.groups())
                 end_secs = hms_to_seconds(*end_match.groups())
-                text = " ".join(block[2:])
+                text = " ".join(line.strip() for line in block[2:])
                 yield start_secs, end_secs, text
                 block = []
 
@@ -56,7 +56,7 @@ def parse_srt(path):
             end_match = TIME_RE.match(timing_parts[1].strip())
             start_secs = hms_to_seconds(*start_match.groups())
             end_secs = hms_to_seconds(*end_match.groups())
-            text = " ".join(block[2:])
+            text = " ".join(line.strip() for line in block[2:])
             yield start_secs, end_secs, text
 
 
@@ -139,17 +139,23 @@ def merge(diar_path, srt_path, output_path):
         
         if speaker == current_speaker and current_speaker is not None:
             # Same speaker, accumulate text
-            current_text.append(text)
+            current_text.append(text.strip())
         else:
             # Different speaker, output previous and start new
             if current_speaker is not None:
-                output_lines.append(f"[[{current_speaker}]]: {' '.join(current_text)}")
+                # Remove multiple spaces and ensure single space after speaker
+                joined_text = ' '.join(current_text)
+                cleaned_text = ' '.join(joined_text.split())
+                output_lines.append(f"[[{current_speaker}]]: {cleaned_text}")
             current_speaker = speaker
-            current_text = [text]
+            current_text = [text.strip()]
     
     # Output the last accumulated text
     if current_speaker is not None:
-        output_lines.append(f"[[{current_speaker}]]: {' '.join(current_text)}")
+        # Remove multiple spaces and ensure single space after speaker
+        joined_text = ' '.join(current_text)
+        cleaned_text = ' '.join(joined_text.split())
+        output_lines.append(f"[[{current_speaker}]]: {cleaned_text}")
     
     # Write to output file
     with open(output_path, 'w', encoding='utf-8') as f:
