@@ -1,4 +1,6 @@
 #!/bin/bash
+# Creates an encrypted backup of Zettelkasten vault and uploads it to iCloud and Google Drive
+# The backup excludes .obsidian directory and is encrypted using age with a public key
 
 set -euo pipefail
 
@@ -13,7 +15,9 @@ GDRIVE_REMOTE="gdrive:ObsidianBackups"
 
 # === Backup ===
 echo "[*] Creating encrypted archive..."
+# Extract public key from age key file for encryption
 PUBKEY=$(grep '^# public key:' ~/.config/age/key.txt | cut -d' ' -f4)
+# Create compressed tar archive excluding .obsidian and pipe to age for encryption
 tar -czf - --exclude=".obsidian" -C "$VAULT_DIR" . | /run/current-system/sw/bin/age -r "$PUBKEY" >"$TMP_BACKUP"
 
 echo "[*] Copying to iCloud..."

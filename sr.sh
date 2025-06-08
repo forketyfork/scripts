@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Convert a file to 1-channel 16 kHz WAV and run through the OpenAI Whisper model
+# Complete speech recognition and diarization pipeline for audio files
+# Converts audio to WAV, runs Whisper transcription, performs speaker diarization,
+# and merges results into a markdown file with speaker attribution
 
 set -eu
 
@@ -9,7 +11,7 @@ if [ $# != 2 ]; then
 	exit 1
 fi
 
-# Convert filename to absolute path before changing directories
+# Convert to absolute paths and extract file information
 filename="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 input_dir="$(dirname "$filename")"
 basename_no_ext=$(basename "$filename" | sed 's/\.[^.]*$//')
@@ -24,13 +26,13 @@ language="$2"
 recording_date=$(stat -f "%Sm" -t "%Y-%m-%d" "$filename")
 final_md_file="${input_dir}/${recording_date} ${basename_no_ext}.md"
 
-# Change to the script's directory and set up cleanup
+# Set up working directory and cleanup handler
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 pushd "$script_dir" >/dev/null
 trap 'popd > /dev/null' EXIT
 whisper_cpp_path="$HOME/dev/github/ggml-org/whisper.cpp"
 
-# convert the input file to 1-channel 16 kHz wav file
+# Convert audio to format required by Whisper (16kHz mono WAV)
 if [ ! -f "${filename_wav}" ]; then
 	echo "Converting to WAV format..."
 	ffmpeg -i "${filename}" -ac 1 -ar 16000 "${filename_wav}"
@@ -38,7 +40,7 @@ else
 	echo "WAV file already exists, skipping conversion"
 fi
 
-# run the speech recognition with large-v3 model
+# Run Whisper transcription with optimized settings for v3 model
 if [ ! -f "${srt_file}" ]; then
 	echo "Running speech recognition..."
 	# settings to avoid the v3 model repeating stuff, taken from https://github.com/ggml-org/whisper.cpp/issues/1507#issuecomment-1816263320
@@ -52,7 +54,7 @@ if [ ! -f "${srt_file}" ]; then
 		--output-srt \
 		--output-file "${input_dir}/${basename_no_ext}"
 
-	# Check if whisper created the SRT file in the script directory instead
+	# Handle case where Whisper outputs to wrong directory
 	if [ ! -f "${srt_file}" ] && [ -f "${basename_no_ext}.srt" ]; then
 		echo "Moving SRT file to correct location..."
 		mv "${basename_no_ext}.srt" "${srt_file}"
@@ -61,20 +63,18 @@ else
 	echo "SRT file already exists, skipping speech recognition"
 fi
 
-# create python virtual environment if it doesn't exist
+# Set up Python environment for diarization
 if [ ! -d "venv" ]; then
 	virtualenv venv --no-setuptools --no-wheel --activators bash
 fi
 
-# activate the virtual environment
+# Activate virtual environment and install dependencies
 source ./venv/bin/activate
-
-# install the required packages if not already installed
 if ! pip show pyannote-audio >/dev/null 2>&1; then
 	pip install pyannote-audio
 fi
 
-# run diarization with error handling
+# Perform speaker diarization to identify who spoke when
 if [ ! -f "${diarization_file}" ]; then
 	echo "Running diarization..."
 	if python3 diarize.py "${filename_wav}" >"${diarization_file}"; then
@@ -87,11 +87,11 @@ else
 	echo "Diarization file already exists, skipping diarization"
 fi
 
-# merge the transcript with diarization
+# Combine transcript and speaker data into final markdown output
 if [ ! -f "${final_md_file}" ]; then
 	echo "Running merge..."
 	if python3 merge_diarization.py "${diarization_file}" "${srt_file}" "${recording_date}" "${basename_no_ext}"; then
-		# Move the generated file to the input directory if it was created in the script directory
+		# Ensure output file is in the correct directory
 		if [ -f "${recording_date} ${basename_no_ext}.md" ] && [ "${recording_date} ${basename_no_ext}.md" != "${final_md_file}" ]; then
 			mv "${recording_date} ${basename_no_ext}.md" "${final_md_file}"
 		fi

@@ -1,5 +1,8 @@
 #!/bin/sh
+# Post-commit hook that updates the git index after pre-commit formatting
+# Ensures index reflects any formatting changes made during pre-commit
+
 set -e
 
-# update the index in case some files were formatted on the pre-commit stage
+# Update index to reflect any formatting changes from pre-commit
 git update-index -g

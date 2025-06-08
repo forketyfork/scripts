@@ -1,31 +1,27 @@
 #!/usr/bin/env bash
-# Rebuild  whisper.cpp with Core ML support
+# Rebuilds whisper.cpp with Apple Core ML acceleration support
+# Updates to latest version, generates Core ML model, and compiles with optimizations
 
 set -eu
 
-# go to the project directory
+# Navigate to whisper.cpp directory and update
 pushd ~/dev/github/ggml-org/whisper.cpp
-
-# pull the latest revision (assuming we're on master)
 git pull
 
-# switch to the python virtual environment and activate it
+# Set up clean Python environment with required packages
 virtualenv venv --clear --no-setuptools --no-wheel --activators bash
 source ./venv/bin/activate
 
-# install the required packages
 pip install ane_transformers openai-whisper coremltools
 
-# generate the large-v3 model
+# Generate Core ML optimized large-v3 model
 ./models/generate-coreml-model.sh large-v3
 
-# Build whisper with CoreML support
+# Configure and build with Core ML acceleration
 cmake -B build -DWHISPER_COREML=1
 
 cmake --build build -j --config Release
 
-# deactivate the virtual environment
+# Clean up and return to original directory
 deactivate
-
-# get back to the initial directory
 popd

@@ -1,16 +1,18 @@
+#!/usr/bin/env python3
+# Performs speaker diarization on audio files using pyannote.audio
+# Takes a WAV file and outputs speaker segments with timestamps
+
 from pyannote.audio import Pipeline
 import argparse
 import torch
-
-# Parse command-line argument
 parser = argparse.ArgumentParser(description="Run speaker diarization on a WAV file")
 parser.add_argument("filename", help="Path to the WAV audio file")
 args = parser.parse_args()
 
-# Load the diarization pipeline 
+# Load pre-trained speaker diarization model
 pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=True)
 
-# Use Apple Silicon GPU if available (Metal Performance Shaders)
+# Detect and use best available device (Apple Silicon MPS, CUDA, or CPU)
 if torch.backends.mps.is_available():
     device = torch.device("mps")
     print(f"Using Apple Silicon GPU (MPS): {device}")
@@ -23,10 +25,10 @@ else:
     device = torch.device("cpu")
     print(f"Using CPU: {device}")
 
-# Run diarization
+# Process audio file and identify speaker segments
 diarization = pipeline(args.filename)
 
-# Print results
+# Output speaker segments with timestamps
 for turn, _, speaker in diarization.itertracks(yield_label=True):
     print(f"{turn.start:.3f}s - {turn.end:.3f}s: {speaker}")
 

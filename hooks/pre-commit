@@ -1,13 +1,15 @@
 #!/bin/sh
+# Pre-commit hook that formats and checks shell scripts before committing
+# Runs shfmt for formatting and shellcheck for linting on modified .sh files
+
 set -e
 
-# find all .sh files changed in the current commit
+# Find all modified shell scripts in the commit
 FILES=$(git diff --cached --name-only --diff-filter=ACMR -- '***.sh' | sed 's| |\\ |g')
 [ -z "$FILES" ] && exit 0
-# format the files
+# Format scripts with shfmt and lint with shellcheck
 echo "$FILES" | xargs shfmt -l -w
-# run shell check
 echo "$FILES" | xargs shellcheck -x
-# add changed files to the commit
+# Stage any formatting changes
 echo "$FILES" | xargs git add
 

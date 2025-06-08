@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-merge_diarization.py
+Merges speaker diarization data with Whisper transcript to create speaker-attributed text
+Combines timing data from diarization with transcript text from SRT files
+Outputs markdown format with speaker labels for each text segment
 
 Usage:
   python merge_diarization.py diarization.txt output.srt YYYY-MM-DD audio_filename
@@ -78,7 +80,7 @@ def parse_diar(path):
 
 
 def join_consecutive_speaker_intervals(segments):
-    """Join all intervals from the same speaker into continuous intervals."""
+    """Merge consecutive segments from same speaker to reduce fragmentation."""
     if not segments:
         return []
     
@@ -100,12 +102,12 @@ def join_consecutive_speaker_intervals(segments):
 
 
 def find_speaker_for_interval(srt_start, srt_end, diar_segments):
-    """Find speaker whose diarized segment has largest intersection with SRT interval."""
+    """Match transcript segment to speaker by finding best time overlap."""
     best_speaker = "UNKNOWN"
     max_intersection = 0.0
     
     for diar_start, diar_end, speaker in diar_segments:
-        # Calculate intersection
+        # Find time overlap between transcript and speaker segments
         intersection_start = max(srt_start, diar_start)
         intersection_end = min(srt_end, diar_end)
         
@@ -116,7 +118,7 @@ def find_speaker_for_interval(srt_start, srt_end, diar_segments):
                 max_intersection = intersection_size
                 best_speaker = speaker
     
-    # If no intersection found, assign to last speaker if SRT is after all diarized intervals
+    # Fall back to last speaker if transcript is after all diarization data
     if best_speaker == "UNKNOWN" and diar_segments:
         last_diar_end = max(seg[1] for seg in diar_segments)
         if srt_start >= last_diar_end:
@@ -141,18 +143,18 @@ def merge(diar_path, srt_path, output_path):
             # Same speaker, accumulate text
             current_text.append(text.strip())
         else:
-            # Different speaker, output previous and start new
+            # Speaker changed - output accumulated text and start new segment
             if current_speaker is not None:
-                # Remove multiple spaces and ensure single space after speaker
+                # Clean up whitespace in accumulated text
                 joined_text = ' '.join(current_text)
                 cleaned_text = ' '.join(joined_text.split())
                 output_lines.append(f"[[{current_speaker}]]: {cleaned_text}")
             current_speaker = speaker
             current_text = [text.strip()]
     
-    # Output the last accumulated text
+    # Output final speaker segment
     if current_speaker is not None:
-        # Remove multiple spaces and ensure single space after speaker
+        # Clean up whitespace in final text
         joined_text = ' '.join(current_text)
         cleaned_text = ' '.join(joined_text.split())
         output_lines.append(f"[[{current_speaker}]]: {cleaned_text}")
