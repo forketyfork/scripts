@@ -7,7 +7,7 @@ FILES=$(git diff --cached --name-only --diff-filter=ACMR -- '***.sh' | sed 's| |
 # format the files
 echo "$FILES" | xargs shfmt -l -w
 # run shell check
-echo "$FILES" | xargs shellcheck
+echo "$FILES" | xargs shellcheck -x
 # add changed files to the commit
 echo "$FILES" | xargs git add
 
