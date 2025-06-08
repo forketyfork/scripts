@@ -14,7 +14,7 @@ GDRIVE_REMOTE="gdrive:ObsidianBackups"
 # === Backup ===
 echo "[*] Creating encrypted archive..."
 PUBKEY=$(grep '^# public key:' ~/.config/age/key.txt | cut -d' ' -f4)
-tar -czf - --exclude=".obsidian" -C "$VAULT_DIR" . | age -r "$PUBKEY" > "$TMP_BACKUP"
+tar -czf - --exclude=".obsidian" -C "$VAULT_DIR" . | /run/current-system/sw/bin/age -r "$PUBKEY" >"$TMP_BACKUP"
 
 echo "[*] Copying to iCloud..."
 mkdir -p "$ICLOUD_DIR"
