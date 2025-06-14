@@ -7,7 +7,7 @@ set -euo pipefail
 # === Config ===
 VAULT_DIR="$HOME/Zettelkasten"
 TIMESTAMP=$(date +%F-%H%M)
-BACKUP_NAME="zettelcasten-$TIMESTAMP.tar.gz.age"
+BACKUP_NAME="zettelkasten-$TIMESTAMP.tar.gz.age"
 TMP_BACKUP="$HOME/$BACKUP_NAME"
 
 ICLOUD_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ObsidianBackups"
@@ -31,3 +31,9 @@ echo "[*] Cleaning up local temp file..."
 rm "$TMP_BACKUP"
 
 echo "[✓] Backup complete: $BACKUP_NAME"
+
+# Send macOS desktop notification
+USER_NAME="$(stat -f%Su /dev/console)"
+USER_ID="$(id -u "$USER_NAME")"
+/bin/launchctl asuser "$USER_ID" sudo -u "$USER_NAME" \
+	/opt/homebrew/bin/terminal-notifier -title "Zettelkasten Backup" -message "Backup complete"
