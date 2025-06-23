@@ -3,6 +3,8 @@
 # Uses plutil to parse Safari's Bookmarks.plist file - inefficient as it re-parses for each URL
 # A better approach would be to parse once and extract all URLs, but this works
 # Fails silently if no articles exist in the Reading List
+#
+# See: https://forketyfork.github.io/blog/2024/07/28/how-to-export-saved-urls-from-safari-reading-list/
 
 set -eu
 
