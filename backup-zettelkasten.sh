@@ -25,7 +25,7 @@ mkdir -p "$ICLOUD_DIR"
 cp "$TMP_BACKUP" "$ICLOUD_DIR/"
 
 echo "[*] Uploading to Google Drive via rclone..."
-rclone copy "$TMP_BACKUP" "$GDRIVE_REMOTE"
+/run/current-system/sw/bin/rclone copy "$TMP_BACKUP" "$GDRIVE_REMOTE"
 
 echo "[*] Cleaning up local temp file..."
 rm "$TMP_BACKUP"
