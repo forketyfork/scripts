@@ -1,39 +1,118 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
 # Creates an encrypted backup of Zettelkasten vault and uploads it to iCloud and Google Drive
 # The backup excludes .obsidian directory and is encrypted using age with a public key
 
-set -euo pipefail
+handle_error() {
+	local ec=$?
+	echo "Error on line $LINENO (exit code: $ec)" >&2
+	exit $ec
+}
+trap handle_error ERR
 
-# === Config ===
-VAULT_DIR="$HOME/Zettelkasten"
-TIMESTAMP=$(date +%F-%H%M)
-BACKUP_NAME="zettelkasten-$TIMESTAMP.tar.gz.age"
-TMP_BACKUP="$HOME/$BACKUP_NAME"
+usage() {
+	cat <<'EOF'
+Usage: backup-zettelkasten.sh
 
-ICLOUD_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ObsidianBackups"
-GDRIVE_REMOTE="gdrive:ObsidianBackups"
+Creates an encrypted backup of Zettelkasten vault and uploads it to iCloud and Google Drive.
+The backup excludes .obsidian directory and is encrypted using age with a public key.
+EOF
+	exit 1
+}
 
-# === Backup ===
-echo "[*] Creating encrypted archive..."
+# Configuration
+readonly vault_dir="$HOME/Zettelkasten"
+timestamp=$(date +%F-%H%M)
+readonly timestamp
+readonly backup_name="zettelkasten-$timestamp.tar.gz.age"
+readonly tmp_backup="$HOME/$backup_name"
+readonly age_key_file="$HOME/.config/age/key.txt"
+
+readonly icloud_dir="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ObsidianBackups"
+readonly gdrive_remote="gdrive:ObsidianBackups"
+
+# Cleanup function
+cleanup() {
+	rm -f "$tmp_backup"
+}
+trap cleanup EXIT
+
+# Validate required directories and files
+if [[ ! -d "$vault_dir" ]]; then
+	echo "Error: Zettelkasten vault directory not found at '$vault_dir'" >&2
+	exit 1
+fi
+
+if [[ ! -f "$age_key_file" ]]; then
+	echo "Error: Age key file not found at '$age_key_file'" >&2
+	exit 1
+fi
+
+# Check for required tools
+if ! command -v age >/dev/null 2>&1; then
+	echo "Error: 'age' command not found" >&2
+	exit 1
+fi
+
+if ! command -v rclone >/dev/null 2>&1; then
+	echo "Error: 'rclone' command not found" >&2
+	exit 1
+fi
+
+echo "Creating encrypted archive..." >&2
+
 # Extract public key from age key file for encryption
-PUBKEY=$(grep '^# public key:' ~/.config/age/key.txt | cut -d' ' -f4)
+pubkey=$(grep '^# public key:' "$age_key_file" | cut -d' ' -f4) || {
+	echo "Failed to extract public key from age key file" >&2
+	exit 1
+}
+readonly pubkey
+
+if [[ -z "$pubkey" ]]; then
+	echo "Error: No public key found in age key file" >&2
+	exit 1
+fi
+
 # Create compressed tar archive excluding .obsidian and pipe to age for encryption
-tar -czf - --exclude=".obsidian" -C "$VAULT_DIR" . | /run/current-system/sw/bin/age -r "$PUBKEY" >"$TMP_BACKUP"
+tar -czf - --exclude=".obsidian" -C "$vault_dir" . | age -r "$pubkey" >"$tmp_backup" || {
+	echo "Failed to create encrypted backup archive" >&2
+	exit 1
+}
 
-echo "[*] Copying to iCloud..."
-mkdir -p "$ICLOUD_DIR"
-cp "$TMP_BACKUP" "$ICLOUD_DIR/"
+echo "Copying to iCloud..." >&2
+mkdir -p "$icloud_dir" || {
+	echo "Failed to create iCloud backup directory" >&2
+	exit 1
+}
 
-echo "[*] Uploading to Google Drive via rclone..."
-/run/current-system/sw/bin/rclone copy "$TMP_BACKUP" "$GDRIVE_REMOTE"
+cp "$tmp_backup" "$icloud_dir/" || {
+	echo "Failed to copy backup to iCloud" >&2
+	exit 1
+}
 
-echo "[*] Cleaning up local temp file..."
-rm "$TMP_BACKUP"
+echo "Uploading to Google Drive via rclone..." >&2
+rclone copy "$tmp_backup" "$gdrive_remote" || {
+	echo "Failed to upload backup to Google Drive" >&2
+	exit 1
+}
 
-echo "[✓] Backup complete: $BACKUP_NAME"
+echo "Backup complete: $backup_name" >&2
 
 # Send macOS desktop notification
-USER_NAME="$(stat -f%Su /dev/console)"
-USER_ID="$(id -u "$USER_NAME")"
-/bin/launchctl asuser "$USER_ID" sudo -u "$USER_NAME" \
-	/opt/homebrew/bin/terminal-notifier -title "Zettelkasten Backup" -message "Backup complete"
+if command -v terminal-notifier >/dev/null 2>&1; then
+	user_name="$(stat -f%Su /dev/console)"
+	readonly user_name
+	user_id="$(id -u "$user_name")"
+	readonly user_id
+
+	/bin/launchctl asuser "$user_id" sudo -u "$user_name" \
+		terminal-notifier -title "Zettelkasten Backup" -message "Backup complete" 2>/dev/null || {
+		echo "Warning: Failed to send desktop notification" >&2
+	}
+else
+	echo "Warning: terminal-notifier not available, skipping desktop notification" >&2
+fi
+
+echo "Zettelkasten backup completed successfully." >&2

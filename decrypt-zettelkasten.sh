@@ -1,29 +1,58 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
 # Decrypts and restores a Zettelkasten backup created by backup-zettelkasten.sh
 # Takes an encrypted .tar.gz.age file and extracts it to a timestamped directory
 
-set -euo pipefail
+handle_error() {
+	local ec=$?
+	echo "Error on line $LINENO (exit code: $ec)" >&2
+	exit $ec
+}
+trap handle_error ERR
 
-# === Input ===
-if [ $# -ne 1 ]; then
-	echo "Usage: $0 <backup-file.tar.gz.age>"
+usage() {
+	cat <<'EOF'
+Usage: decrypt-zettelkasten.sh <backup-file.tar.gz.age>
+
+Decrypts and restores a Zettelkasten backup created by backup-zettelkasten.sh.
+Takes an encrypted .tar.gz.age file and extracts it to a timestamped directory.
+EOF
+	exit 1
+}
+
+if [[ $# -ne 1 ]]; then
+	usage
+fi
+
+readonly enc_file="$1"
+readonly age_key_file="$HOME/.config/age/key.txt"
+
+if [[ ! -f "$enc_file" ]]; then
+	echo "Error: File '$enc_file' not found." >&2
 	exit 1
 fi
 
-ENC_FILE="$1"
-
-if [ ! -f "$ENC_FILE" ]; then
-	echo "Error: File '$ENC_FILE' not found."
-	exit 2
+if [[ ! -f "$age_key_file" ]]; then
+	echo "Error: Age key file not found at '$age_key_file'" >&2
+	exit 1
 fi
 
-# === Output Directory ===
-OUT_DIR="./zettel-restore-$(date +%F-%H%M)"
-mkdir -p "$OUT_DIR"
+out_dir_suffix=$(date +%F-%H%M)
+readonly out_dir="./zettel-restore-$out_dir_suffix"
 
-echo "[*] Decrypting $ENC_FILE to $OUT_DIR..."
+echo "Creating output directory: $out_dir" >&2
+mkdir -p "$out_dir" || {
+	echo "Failed to create output directory" >&2
+	exit 1
+}
 
-# Decrypt using age private key and extract tar archive
-age -d -i ~/.config/age/key.txt "$ENC_FILE" | tar -xzf - -C "$OUT_DIR"
+echo "Decrypting $enc_file to $out_dir..." >&2
 
-echo "[✓] Restore complete in: $OUT_DIR"
+age -d -i "$age_key_file" "$enc_file" | tar -xzf - -C "$out_dir" || {
+	echo "Failed to decrypt and extract backup" >&2
+	exit 1
+}
+
+echo "Restore complete in: $out_dir" >&2
