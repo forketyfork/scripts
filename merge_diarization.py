@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-Merges speaker diarization data with Whisper transcript to create speaker-attributed text
-Combines timing data from diarization with transcript text from SRT files
-Outputs markdown format with speaker labels for each text segment
+"""Merges speaker diarization data with Whisper transcript to create speaker-attributed text.
+
+Combines timing data from diarization with transcript text from SRT files.
+Outputs markdown format with speaker labels for each text segment.
 
 Usage:
   python merge_diarization.py diarization.txt output.srt YYYY-MM-DD audio_filename
@@ -13,9 +13,10 @@ Creates a markdown file named "YYYY-MM-DD audio_filename.md" with content like:
 """
 
 import argparse
-import re
 import os
-from datetime import timedelta
+import re
+import sys
+from typing import Iterator, List, Tuple
 
 TIME_RE = re.compile(
     r"(\d{2}):(\d{2}):(\d{2}),(\d{3})"  # HH:MM:SS,mmm
@@ -25,61 +26,82 @@ DIAR_RE = re.compile(
     r"(\d+(?:\.\d{1,3})?)s\s*-\s*(\d+(?:\.\d{1,3})?)s:\s*(\S+)"  # 0.000s - 3.142s: SPEAKER_01
 )
 
-def hms_to_seconds(h, m, s, ms):
+def hms_to_seconds(h: str, m: str, s: str, ms: str) -> float:
+    """Convert hours, minutes, seconds, milliseconds to total seconds."""
     return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000.0
 
-def parse_srt(path):
-    """Yield (start_seconds, end_seconds, text) for each caption block."""
-    with open(path, encoding="utf-8") as f:
-        block = []
-        for line in f:
-            if line.strip():
-                block.append(line.rstrip("\n"))
-                continue
 
-            # blank line → end of block
+def parse_srt(path: str) -> Iterator[Tuple[float, float, str]]:
+    """Yield (start_seconds, end_seconds, text) for each caption block."""
+    if not os.path.isfile(path):
+        print(f"Error: SRT file '{path}' not found.", file=sys.stderr)
+        sys.exit(1)
+        
+    try:
+        with open(path, encoding="utf-8") as f:
+            block = []
+            for line in f:
+                if line.strip():
+                    block.append(line.rstrip("\n"))
+                    continue
+
+                # blank line → end of block
+                if block:
+                    # block[1] is the timing line, rest is text
+                    timing_parts = block[1].split("-->")
+                    start_match = TIME_RE.match(timing_parts[0].strip())
+                    end_match = TIME_RE.match(timing_parts[1].strip())
+                    if not start_match or not end_match:
+                        raise ValueError(f"Bad SRT time in block: {block}")
+                    start_secs = hms_to_seconds(*start_match.groups())
+                    end_secs = hms_to_seconds(*end_match.groups())
+                    text = " ".join(line.strip() for line in block[2:])
+                    yield start_secs, end_secs, text
+                    block = []
+
+            # handle last block (EOF w/o trailing newline)
             if block:
-                # block[1] is the timing line, rest is text
                 timing_parts = block[1].split("-->")
                 start_match = TIME_RE.match(timing_parts[0].strip())
                 end_match = TIME_RE.match(timing_parts[1].strip())
-                if not start_match or not end_match:
-                    raise ValueError(f"Bad SRT time in block: {block}")
                 start_secs = hms_to_seconds(*start_match.groups())
                 end_secs = hms_to_seconds(*end_match.groups())
                 text = " ".join(line.strip() for line in block[2:])
                 yield start_secs, end_secs, text
-                block = []
-
-        # handle last block (EOF w/o trailing newline)
-        if block:
-            timing_parts = block[1].split("-->")
-            start_match = TIME_RE.match(timing_parts[0].strip())
-            end_match = TIME_RE.match(timing_parts[1].strip())
-            start_secs = hms_to_seconds(*start_match.groups())
-            end_secs = hms_to_seconds(*end_match.groups())
-            text = " ".join(line.strip() for line in block[2:])
-            yield start_secs, end_secs, text
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"Error reading SRT file '{path}': {e}", file=sys.stderr)
+        sys.exit(1)
 
 
-def parse_diar(path):
+def parse_diar(path: str) -> List[Tuple[float, float, str]]:
     """Return list of (start, end, speaker) sorted by start time."""
+    if not os.path.isfile(path):
+        print(f"Error: Diarization file '{path}' not found.", file=sys.stderr)
+        sys.exit(1)
+        
     segments = []
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            m = DIAR_RE.match(line)
-            if not m:
-                continue
-            start, end, spk = m.groups()
-            segments.append((float(start), float(end), spk))
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                m = DIAR_RE.match(line)
+                if not m:
+                    continue
+                start, end, spk = m.groups()
+                segments.append((float(start), float(end), spk))
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"Error reading diarization file '{path}': {e}", file=sys.stderr)
+        sys.exit(1)
+        
     segments.sort(key=lambda t: t[0])
     return segments
 
 
-def join_consecutive_speaker_intervals(segments):
+def join_consecutive_speaker_intervals(
+    segments: List[Tuple[float, float, str]]
+) -> List[Tuple[float, float, str]]:
     """Merge consecutive segments from same speaker to reduce fragmentation."""
     if not segments:
         return []
@@ -101,7 +123,11 @@ def join_consecutive_speaker_intervals(segments):
     return joined
 
 
-def find_speaker_for_interval(srt_start, srt_end, diar_segments):
+def find_speaker_for_interval(
+    srt_start: float,
+    srt_end: float,
+    diar_segments: List[Tuple[float, float, str]]
+) -> str:
     """Match transcript segment to speaker by finding best time overlap."""
     best_speaker = "UNKNOWN"
     max_intersection = 0.0
@@ -128,7 +154,7 @@ def find_speaker_for_interval(srt_start, srt_end, diar_segments):
     return best_speaker
 
 
-def merge(diar_path, srt_path, output_path):
+def merge(diar_path: str, srt_path: str, output_path: str) -> None:
     segments = parse_diar(diar_path)
     joined_segments = join_consecutive_speaker_intervals(segments)
     
@@ -160,9 +186,13 @@ def merge(diar_path, srt_path, output_path):
         output_lines.append(f"[[{current_speaker}]]: {cleaned_text}")
     
     # Write to output file
-    with open(output_path, 'w', encoding='utf-8') as f:
-        for line in output_lines:
-            f.write(line + '\n')
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            for line in output_lines:
+                f.write(line + '\n')
+    except OSError as e:
+        print(f"Error writing output file '{output_path}': {e}", file=sys.stderr)
+        sys.exit(1)
     
     print(f"Output written to: {output_path}")
 
