@@ -50,17 +50,6 @@ if [[ ! -f "$age_key_file" ]]; then
 	exit 1
 fi
 
-# Check for required tools
-if ! command -v age >/dev/null 2>&1; then
-	echo "Error: 'age' command not found" >&2
-	exit 1
-fi
-
-if ! command -v rclone >/dev/null 2>&1; then
-	echo "Error: 'rclone' command not found" >&2
-	exit 1
-fi
-
 echo "Creating encrypted archive..." >&2
 
 # Extract public key from age key file for encryption
@@ -76,7 +65,7 @@ if [[ -z "$pubkey" ]]; then
 fi
 
 # Create compressed tar archive excluding .obsidian and pipe to age for encryption
-tar -czf - --exclude=".obsidian" -C "$vault_dir" . | age -r "$pubkey" >"$tmp_backup" || {
+tar -czf - --exclude=".obsidian" -C "$vault_dir" . | /run/current-system/sw/bin/age -r "$pubkey" >"$tmp_backup" || {
 	echo "Failed to create encrypted backup archive" >&2
 	exit 1
 }
@@ -93,7 +82,7 @@ cp "$tmp_backup" "$icloud_dir/" || {
 }
 
 echo "Uploading to Google Drive via rclone..." >&2
-rclone copy "$tmp_backup" "$gdrive_remote" || {
+/run/current-system/sw/bin/rclone copy "$tmp_backup" "$gdrive_remote" || {
 	echo "Failed to upload backup to Google Drive" >&2
 	exit 1
 }
