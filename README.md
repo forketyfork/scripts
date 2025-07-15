@@ -45,6 +45,14 @@ A collection of utility scripts for various tasks including audio processing, Sa
   - Outputs each saved article URL on a separate line
   - Handles cases where Reading List is empty
 
+- **[convert_books.py](convert_books.py)**: Converts [Book Tracker](https://booktrack.app/) CSV exports to [Obsidian Bookshelf](https://weph.github.io/obsidian-bookshelf/) plugin format
+  - Reads CSV files containing book data with semicolon delimiter
+  - Converts each book into a markdown file with YAML frontmatter
+  - Sanitizes filenames for filesystem compatibility
+  - Formats dates and parses author names from CSV format
+  - Creates reading journey timeline with start/end dates
+  - Usage: `python convert_books.py <csv_file> <output_dir> [--delimiter=";"]`
+
 ## Git Hooks
 
 The repository includes pre-commit and post-commit hooks for shell script quality:
