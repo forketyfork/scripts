@@ -38,3 +38,31 @@
 - **backup-zettelkasten.sh**: Creates encrypted backups using age encryption and uploads to iCloud/Google Drive
 - **decrypt-zettelkasten.sh**: Decrypts backups created by backup-zettelkasten.sh
 - **bookmarks.sh**: Extracts URLs from Safari Reading List using plutil
+- **artifact_downloads.py**: Monitors GitHub repositories for new artifact downloads, outputs timestamped messages with download counts
+
+## artifact_downloads.py Configuration
+
+The script requires a text file listing GitHub repositories to monitor (default: `artifact_repos.txt`). Each line should contain a repository in the format `owner/repo`.
+
+### Environment Variables:
+- `GITHUB_TOKEN`: Optional GitHub personal access token for higher API rate limits (recommended)
+- `ARTIFACT_REPOS_FILE`: Path to repository list file (default: `artifact_repos.txt`)
+
+### Usage:
+```bash
+# Create repository list
+echo "forketyfork/claude-nein" > artifact_repos.txt
+echo "owner/another-repo" >> artifact_repos.txt
+
+# Run with authentication (recommended)
+export GITHUB_TOKEN="your_token_here"
+python3 artifact_downloads.py
+
+# Run without authentication (60 requests/hour limit)
+python3 artifact_downloads.py
+```
+
+### Output Format:
+```
+YYYY-MM-DD HH:MM:SS Artifact downloaded: owner/repo:filename.zip (+N)
+```

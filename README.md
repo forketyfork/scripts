@@ -53,6 +53,14 @@ A collection of utility scripts for various tasks including audio processing, Sa
   - Creates reading journey timeline with start/end dates
   - Usage: `python convert_books.py <csv_file> <output_dir> [--delimiter=";"]`
 
+- **[artifact_downloads.py](artifact_downloads.py)**: Monitors GitHub repositories for new artifact downloads
+  - Checks repository releases every 60 seconds for download count changes
+  - Outputs timestamped messages when new downloads are detected
+  - Supports GitHub API authentication for higher rate limits
+  - Validates repository names and handles rate limiting gracefully
+  - Requires `artifact_repos.txt` file with list of repositories to monitor
+  - Usage: `python3 artifact_downloads.py` (set `GITHUB_TOKEN` environment variable for authentication)
+
 ## Git Hooks
 
 The repository includes pre-commit and post-commit hooks for shell script quality:
@@ -68,6 +76,33 @@ To install the hooks after cloning:
 ```sh
 git config --local core.hooksPath hooks
 ```
+
+## Environment Setup
+
+This repository uses [direnv](https://direnv.net/) for environment variable management:
+
+1. **Install direnv** (if not already installed):
+   ```sh
+   # macOS
+   brew install direnv
+   
+   # Add to your shell profile (.bashrc, .zshrc, etc.)
+   eval "$(direnv hook bash)"  # or zsh, fish, etc.
+   ```
+
+2. **Configure environment variables**:
+   ```sh
+   # Edit .env file and add your GitHub token
+   echo "GITHUB_TOKEN=your_token_here" > .env
+   
+   # Allow direnv to load the environment
+   direnv allow
+   ```
+
+3. **GitHub Token Setup** (recommended for artifact_downloads.py):
+   - Visit [GitHub Settings > Tokens](https://github.com/settings/tokens)
+   - Create a new token with `public_repo` scope
+   - Add it to your `.env` file
 
 ## Dependencies
 
