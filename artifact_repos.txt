@@ -1,0 +1,3 @@
+forketyfork/claude-code
+forketyfork/obsidian-food-tracker
+forketyfork/obsidian-youtrack-fetcher
