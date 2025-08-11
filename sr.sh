@@ -13,6 +13,22 @@ handle_error() {
 }
 trap handle_error ERR
 
+cleanup_on_success() {
+	# Remove intermediate files only on successful completion
+	if [[ -f "$filename_wav" ]]; then
+		echo "Cleaning up intermediate WAV file..." >&2
+		rm -f "$filename_wav"
+	fi
+	if [[ -f "$srt_file" ]]; then
+		echo "Cleaning up intermediate SRT file..." >&2
+		rm -f "$srt_file"
+	fi
+	if [[ -f "$diarization_file" ]]; then
+		echo "Cleaning up intermediate diarization file..." >&2
+		rm -f "$diarization_file"
+	fi
+}
+
 usage() {
 	cat <<'EOF'
 Usage: sr.sh <audio-file> <language>
@@ -56,7 +72,8 @@ readonly diarization_file="${input_dir}/${basename_no_ext}_diarization.txt"
 # Extract recording date from file modification time
 recording_date=$(stat -f "%Sm" -t "%Y-%m-%d" "$filename")
 readonly recording_date
-readonly final_md_file="${input_dir}/${recording_date} ${basename_no_ext}.md"
+readonly meetings_dir="$HOME/Zettelkasten/meetings"
+readonly final_md_file="${meetings_dir}/${recording_date} ${basename_no_ext}.md"
 
 # Set up working directory and cleanup handler
 script_dir="$(cd "$(dirname "$0")" && pwd)"
@@ -66,6 +83,14 @@ readonly whisper_cpp_path="$HOME/dev/github/ggml-org/whisper.cpp"
 if [[ ! -d "$whisper_cpp_path" ]]; then
 	echo "Error: whisper.cpp directory not found at '$whisper_cpp_path'" >&2
 	exit 1
+fi
+
+# Ensure the meetings directory exists
+if [[ ! -d "$meetings_dir" ]]; then
+	mkdir -p "$meetings_dir" || {
+		echo "Error: Could not create meetings directory at '$meetings_dir'" >&2
+		exit 1
+	}
 fi
 
 pushd "$script_dir" >/dev/null
@@ -195,5 +220,8 @@ if [[ ! -f "$final_md_file" ]]; then
 else
 	echo "Final merged file already exists, skipping merge" >&2
 fi
+
+# Clean up intermediate files on successful completion
+cleanup_on_success
 
 echo "Speech recognition and diarization pipeline completed successfully." >&2
