@@ -69,8 +69,19 @@ readonly filename_wav="${filename}.wav"
 readonly srt_file="${input_dir}/${basename_no_ext}.srt"
 readonly diarization_file="${input_dir}/${basename_no_ext}_diarization.txt"
 
-# Extract recording date from file modification time
-recording_date=$(stat -f "%Sm" -t "%Y-%m-%d" "$filename")
+# Extract recording date from file modification time (cross-platform)
+get_file_date() {
+	local file="$1"
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		# macOS (BSD stat)
+		stat -f "%Sm" -t "%Y-%m-%d" "$file"
+	else
+		# Linux (GNU stat)
+		stat -c "%y" "$file" | cut -d' ' -f1
+	fi
+}
+
+recording_date=$(get_file_date "$filename")
 readonly recording_date
 readonly meetings_dir="$HOME/Zettelkasten/meetings"
 readonly final_md_file="${meetings_dir}/${recording_date} ${basename_no_ext}.md"

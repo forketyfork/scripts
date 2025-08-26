@@ -90,7 +90,7 @@ echo "Uploading to Google Drive via rclone..." >&2
 echo "Backup complete: $backup_name" >&2
 
 # Send macOS desktop notification
-if command -v terminal-notifier >/dev/null 2>&1; then
+if command -v terminal-notifier >/dev/null 2>&1 && [[ "$OSTYPE" == "darwin"* ]]; then
 	user_name="$(stat -f%Su /dev/console)"
 	readonly user_name
 	user_id="$(id -u "$user_name")"
