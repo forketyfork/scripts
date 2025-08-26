@@ -26,6 +26,13 @@ A collection of utility scripts for various tasks including audio processing, Sa
   - Builds with Core ML optimization for faster inference on Apple Silicon
   - Generates Core ML models for the large-v3 Whisper model
 
+- **[youtube-to-srt.sh](youtube-to-srt.sh)**: Downloads YouTube videos and generates SRT subtitles
+  - Downloads video from YouTube using yt-dlp
+  - Extracts audio and converts to 16kHz mono WAV format
+  - Uses Whisper large-v3 model for subtitle generation
+  - Automatically cleans up temporary video/audio files
+  - Usage: `./youtube-to-srt.sh <youtube_url> <language_code> [output_file.srt]`
+
 ## Data Management Scripts
 
 - **[backup-zettelkasten.sh](backup-zettelkasten.sh)**: Creates encrypted backups of Zettelkasten/Obsidian vault
@@ -107,6 +114,7 @@ This repository uses [direnv](https://direnv.net/) for environment variable mana
 ## Dependencies
 
 - **Audio processing**: ffmpeg, whisper.cpp, Python with pyannote-audio
+- **Video downloads**: yt-dlp (for YouTube video downloads)
 - **Encryption**: age (for Zettelkasten backups)
 - **Cloud storage**: rclone (for Google Drive sync)
 - **Shell tools**: shfmt, shellcheck (for git hooks)
