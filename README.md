@@ -84,37 +84,82 @@ To install the hooks after cloning:
 git config --local core.hooksPath hooks
 ```
 
-## Environment Setup
+## Setup
 
-This repository uses [direnv](https://direnv.net/) for environment variable management:
+This repository uses [Nix](https://nixos.org/) with [direnv](https://direnv.net/) for reproducible dependency management.
 
-1. **Install direnv** (if not already installed):
+### Prerequisites
+
+1. **Install Nix** (if not already installed):
    ```sh
-   # macOS
+   # Single-user installation (recommended for macOS)
+   curl -L https://nixos.org/nix/install | sh
+   
+   # Enable flakes (add to ~/.config/nix/nix.conf or /etc/nix/nix.conf)
+   echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+   ```
+
+2. **Install direnv** (if not already installed):
+   ```sh
+   # Via Nix
+   nix profile install nixpkgs#direnv
+   
+   # Or via Homebrew on macOS
    brew install direnv
    
    # Add to your shell profile (.bashrc, .zshrc, etc.)
    eval "$(direnv hook bash)"  # or zsh, fish, etc.
    ```
 
-2. **Configure environment variables**:
+### Getting Started
+
+1. **Clone and enter the repository**:
    ```sh
-   # Edit .env file and add your GitHub token
-   echo "GITHUB_TOKEN=your_token_here" > .env
-   
-   # Allow direnv to load the environment
-   direnv allow
+   git clone <repository-url>
+   cd scripts
    ```
 
-3. **GitHub Token Setup** (recommended for artifact_downloads.py):
+2. **Allow direnv to load the environment**:
+   ```sh
+   direnv allow
+   ```
+   
+   This will automatically:
+   - Set up a Nix development shell with all dependencies
+   - Provide Python 3 with virtualenv support (scripts manage their own ML packages)
+   - Configure git hooks for shell script formatting
+   - Create a `.env` template file
+
+3. **Configure environment variables** (edit the generated `.env` file):
+   ```sh
+   # GitHub token for artifact_downloads.py (optional but recommended)
+   GITHUB_TOKEN=your_token_here
+   
+   # Zettelkasten vault directory (for backup scripts)
+   ZETTELKASTEN_DIR=$HOME/Documents/Zettelkasten
+   
+   # Google Drive remote for rclone (configure with: rclone config)
+   GDRIVE_REMOTE=gdrive:backups
+   ```
+
+4. **GitHub Token Setup** (recommended for artifact_downloads.py):
    - Visit [GitHub Settings > Tokens](https://github.com/settings/tokens)
    - Create a new token with `public_repo` scope
    - Add it to your `.env` file
 
-## Dependencies
+### Special Requirements
 
-- **Audio processing**: ffmpeg, whisper.cpp, Python with pyannote-audio
-- **Video downloads**: yt-dlp (for YouTube video downloads)
-- **Encryption**: age (for Zettelkasten backups)
-- **Cloud storage**: rclone (for Google Drive sync)
-- **Shell tools**: shfmt, shellcheck (for git hooks)
+- **whisper.cpp**: Needs to be built separately at `~/dev/github/ggml-org/whisper.cpp`
+  - Run `./whisper-rebuild.sh` to build it with Core ML support
+- **rclone**: Configure Google Drive access with `rclone config`
+- **age encryption**: Set up key file at `~/.config/age/key.txt` for backup scripts
+
+### Available Dependencies
+
+The Nix flake provides all necessary dependencies:
+- **Audio processing**: ffmpeg, Python 3 with virtualenv (ML packages installed on-demand)
+- **Video downloads**: yt-dlp 
+- **Encryption**: age
+- **Cloud storage**: rclone
+- **Shell tools**: shfmt, shellcheck
+- **Development**: git, direnv, terminal-notifier (macOS)
