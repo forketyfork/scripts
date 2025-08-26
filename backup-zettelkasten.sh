@@ -91,15 +91,21 @@ echo "Backup complete: $backup_name" >&2
 
 # Send macOS desktop notification
 if command -v terminal-notifier >/dev/null 2>&1 && [[ "$OSTYPE" == "darwin"* ]]; then
-	user_name="$(stat -f%Su /dev/console)"
-	readonly user_name
-	user_id="$(id -u "$user_name")"
-	readonly user_id
+	# Use appropriate stat command based on what's available
+	if stat --version >/dev/null 2>&1; then
+		# GNU stat doesn't support this functionality, skip notification
+		echo "Warning: GNU stat detected, skipping desktop notification" >&2
+	else
+		user_name="$(stat -f%Su /dev/console)"
+		readonly user_name
+		user_id="$(id -u "$user_name")"
+		readonly user_id
 
-	/bin/launchctl asuser "$user_id" sudo -u "$user_name" \
-		terminal-notifier -title "Zettelkasten Backup" -message "Backup complete" 2>/dev/null || {
-		echo "Warning: Failed to send desktop notification" >&2
-	}
+		/bin/launchctl asuser "$user_id" sudo -u "$user_name" \
+			terminal-notifier -title "Zettelkasten Backup" -message "Backup complete" 2>/dev/null || {
+			echo "Warning: Failed to send desktop notification" >&2
+		}
+	fi
 else
 	echo "Warning: terminal-notifier not available, skipping desktop notification" >&2
 fi

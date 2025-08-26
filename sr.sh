@@ -72,12 +72,13 @@ readonly diarization_file="${input_dir}/${basename_no_ext}_diarization.txt"
 # Extract recording date from file modification time (cross-platform)
 get_file_date() {
 	local file="$1"
-	if [[ "$OSTYPE" == "darwin"* ]]; then
-		# macOS (BSD stat)
-		stat -f "%Sm" -t "%Y-%m-%d" "$file"
-	else
-		# Linux (GNU stat)
+	# Test if we have GNU stat (supports --version) or BSD stat
+	if stat --version >/dev/null 2>&1; then
+		# GNU stat (Linux/Nix)
 		stat -c "%y" "$file" | cut -d' ' -f1
+	else
+		# BSD stat (native macOS)
+		stat -f "%Sm" -t "%Y-%m-%d" "$file"
 	fi
 }
 
