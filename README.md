@@ -126,7 +126,7 @@ This repository uses [Nix](https://nixos.org/) with [direnv](https://direnv.net/
    
    This will automatically:
    - Set up a Nix development shell with all dependencies
-   - Install Python packages (torch, pyannote-audio, etc.)
+   - Provide Python 3 with virtualenv support (scripts manage their own ML packages)
    - Configure git hooks for shell script formatting
    - Create a `.env` template file
 
@@ -157,7 +157,7 @@ This repository uses [Nix](https://nixos.org/) with [direnv](https://direnv.net/
 ### Available Dependencies
 
 The Nix flake provides all necessary dependencies:
-- **Audio processing**: ffmpeg, Python with pyannote-audio and torch
+- **Audio processing**: ffmpeg, Python 3 with virtualenv (ML packages installed on-demand)
 - **Video downloads**: yt-dlp 
 - **Encryption**: age
 - **Cloud storage**: rclone

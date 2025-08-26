@@ -10,15 +10,6 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        
-        pythonEnv = pkgs.python3.withPackages (ps: with ps; [
-          torch
-          torchvision
-          torchaudio
-          pyannote-audio
-          pip
-        ]);
-
       in
       {
         devShells.default = pkgs.mkShell {
@@ -50,8 +41,10 @@
             # Git
             git
             
-            # Python and ML dependencies
-            pythonEnv
+            # Python (for virtualenv management)
+            python3
+            python3Packages.pip
+            python3Packages.virtualenv
             
             # macOS specific (conditionally included)
             terminal-notifier
@@ -69,7 +62,7 @@
             echo "  Crypto: age"
             echo "  Cloud: rclone"
             echo "  Shell: shfmt, shellcheck"
-            echo "  Python: $(python3 --version) with ML packages"
+            echo "  Python: $(python3 --version) (ML packages via virtualenv)"
             echo ""
             echo "Note: whisper.cpp needs to be built separately in ~/dev/github/ggml-org/whisper.cpp"
             echo "Run ./whisper-rebuild.sh to build it with Core ML support"
@@ -98,21 +91,13 @@ EOF
               echo "Please edit .env with your configuration"
             fi
           '';
-          
-          # Environment variables
-          PYTHONPATH = "${pythonEnv}/${pythonEnv.sitePackages}";
-          
-          # Ensure Python can find the ML libraries
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-            pkgs.stdenv.cc.cc.lib
-          ];
         };
 
         # Make individual scripts available as packages
         packages = {
           sr = pkgs.writeShellApplication {
             name = "sr";
-            runtimeInputs = with pkgs; [ ffmpeg pythonEnv ];
+            runtimeInputs = with pkgs; [ ffmpeg python3 python3Packages.virtualenv ];
             text = builtins.readFile ./sr.sh;
           };
           
@@ -142,7 +127,7 @@ EOF
           
           whisper-rebuild = pkgs.writeShellApplication {
             name = "whisper-rebuild";
-            runtimeInputs = with pkgs; [ git pythonEnv ];
+            runtimeInputs = with pkgs; [ git python3 python3Packages.virtualenv python3Packages.pip ];
             text = builtins.readFile ./whisper-rebuild.sh;
           };
         };
