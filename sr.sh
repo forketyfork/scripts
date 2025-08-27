@@ -164,7 +164,7 @@ fi
 # Set up Python environment for diarization
 if [[ ! -d "venv" ]]; then
 	echo "Creating Python virtual environment..." >&2
-	virtualenv venv --no-setuptools --no-wheel --activators bash || {
+	virtualenv venv --python="python3.12" --no-setuptools --no-wheel --activators bash || {
 		echo "Failed to create virtual environment" >&2
 		exit 1
 	}
