@@ -9,10 +9,7 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system}.extend (final: prev: {
-          python3 = prev.python312;
-          python3Packages = prev.python312Packages;
-        });
+        pkgs = nixpkgs.legacyPackages.${system};
       in
       {
         devShells.default = pkgs.mkShell {

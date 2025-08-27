@@ -40,7 +40,7 @@ git pull || {
 }
 
 echo "Setting up clean Python environment..." >&2
-virtualenv venv --clear --no-setuptools --no-wheel --activators bash || {
+virtualenv venv --python="python3.12" --clear --no-setuptools --no-wheel --activators bash || {
 	echo "Failed to create virtual environment" >&2
 	exit 1
 }
