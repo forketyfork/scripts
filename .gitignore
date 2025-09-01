@@ -2,3 +2,4 @@ __pycache__/
 .env
 .direnv/
 artifact_downloads_state.json
+.DS_Store
