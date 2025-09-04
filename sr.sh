@@ -82,6 +82,17 @@ get_file_date() {
 	fi
 }
 
+# Get language-specific initial prompt for Whisper
+get_initial_prompt() {
+	local lang="$1"
+	case "$lang" in
+	ru) echo "Привет, давайте начнём." ;;
+	de) echo "Hallo, guten Tag, fangen wir an." ;;
+	en) echo "Hello everyone, let's get started." ;;
+	*) echo "" ;;
+	esac
+}
+
 recording_date=$(get_file_date "$filename")
 readonly recording_date
 readonly meetings_dir="$HOME/Zettelkasten/meetings"
@@ -135,16 +146,29 @@ fi
 
 if [[ ! -f "$srt_file" ]]; then
 	echo "Running speech recognition..." >&2
+	# Get language-specific initial prompt
+	initial_prompt=$(get_initial_prompt "$language")
+	readonly initial_prompt
+
+	# Prepare Whisper command with optional initial prompt
+	whisper_args=(
+		-m "$whisper_model"
+		-f "$filename_wav"
+		--language "$language"
+		--entropy-thold 2.8
+		--max-context 64
+		--beam-size 5
+		--output-srt
+		--output-file "${input_dir}/${basename_no_ext}"
+	)
+
+	# Add initial prompt if available for the language
+	if [[ -n "$initial_prompt" ]]; then
+		whisper_args+=(--prompt "$initial_prompt")
+	fi
+
 	# settings to avoid the v3 model repeating stuff, taken from https://github.com/ggml-org/whisper.cpp/issues/1507#issuecomment-1816263320
-	"$whisper_bin" \
-		-m "$whisper_model" \
-		-f "$filename_wav" \
-		--language "$language" \
-		--entropy-thold 2.8 \
-		--max-context 64 \
-		--beam-size 5 \
-		--output-srt \
-		--output-file "${input_dir}/${basename_no_ext}" || {
+	"$whisper_bin" "${whisper_args[@]}" || {
 		echo "Failed to run speech recognition" >&2
 		exit 1
 	}
