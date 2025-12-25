@@ -45,6 +45,15 @@ A collection of utility scripts for various tasks including audio processing, Sa
   - Extracts contents to timestamped restore directory
   - Usage: `./decrypt-zettelkasten.sh <backup-file.tar.gz.age>`
 
+- **[cleanup-zettelkasten-backup.sh](cleanup-zettelkasten-backup.sh)**: Manages retention of Zettelkasten backups
+  - Implements automated retention policy for backup files
+  - Keeps all backups for current month
+  - Keeps every 7th backup for previous month (1st, 8th, 15th file when sorted)
+  - Keeps only first backup for each older month
+  - Cleans up both iCloud and Google Drive locations
+  - Shows confirmation with list of files to delete before removal
+  - Usage: `./cleanup-zettelkasten-backup.sh`
+
 ## Utility Scripts
 
 - **[bookmarks.sh](bookmarks.sh)**: Extracts URLs from macOS Safari Reading List
