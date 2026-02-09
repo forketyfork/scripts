@@ -108,9 +108,7 @@ mv "$tmp_today" "$TODAY_FILE"
 
 echo "Carried unchecked tasks to today's note."
 
-# Mark unchecked tasks as carried in previous note
-# Replace "- [ ] <text>" with "- <text> → carried"
-# Also handle indented tasks
+# Remove unchecked tasks from previous note
 tmp_prev=$(mktemp)
 in_todo=0
 while IFS= read -r line; do
@@ -121,13 +119,13 @@ while IFS= read -r line; do
 		in_todo=0
 		echo "$line"
 	elif [[ $in_todo -eq 1 && "$line" =~ ^[[:space:]]*-\ \[\ \] ]]; then
-		# Unchecked task: remove [ ] and append → carried
-		echo "$line" | sed 's/- \[ \] /- /' | sed 's/$/ → carried/'
+		# Unchecked task: skip (moved to today)
+		continue
 	else
 		echo "$line"
 	fi
 done <"$PREV_FILE" >"$tmp_prev"
 mv "$tmp_prev" "$PREV_FILE"
 
-echo "Marked carried tasks in previous note."
+echo "Removed carried tasks from previous note."
 echo "Done!"
