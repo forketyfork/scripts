@@ -13,14 +13,25 @@ TEMPLATE="$VAULT/templates/Daily Note.md"
 TODAY=$(date +%Y-%m-%d)
 TODAY_FILE="$DIARY_DIR/$TODAY.md"
 
+tmp_today=""
+tmp_prev=""
+cleanup() {
+	[[ -n "$tmp_today" && -f "$tmp_today" ]] && rm -f "$tmp_today"
+	[[ -n "$tmp_prev" && -f "$tmp_prev" ]] && rm -f "$tmp_prev"
+}
+trap cleanup EXIT
+
 # Find the most recent diary note before today
 PREV_FILE=""
+shopt -s nullglob
 for f in "$DIARY_DIR"/*.md; do
 	basename_f="$(basename "$f" .md)"
+	[[ "$basename_f" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || continue
 	if [[ "$basename_f" < "$TODAY" ]]; then
 		PREV_FILE="$f"
 	fi
 done
+shopt -u nullglob
 
 if [[ -z "$PREV_FILE" ]]; then
 	echo "Error: No previous daily note found before $TODAY" >&2
@@ -46,11 +57,16 @@ fi
 # Preserve non-task lines (headers, blank lines) as-is
 UNCHECKED=$(echo "$TODO_SECTION" | awk '
     /^[[:space:]]*- \[x\]/ { next }
+    /→ carried[[:space:]]*$/ { next }
     { print }
 ')
 
-# Remove trailing blank lines from UNCHECKED
-UNCHECKED=$(printf '%s\n' "$UNCHECKED" | awk 'NF{p=1} p' | awk '{lines[NR]=$0} END{for(i=NR;i>=1;i--) if(lines[i]~/[^ \t]/) {last=i; break} for(i=1;i<=last;i++) print lines[i]}')
+# Remove leading and trailing blank lines from UNCHECKED
+UNCHECKED=$(printf '%s\n' "$UNCHECKED" | awk '
+    {lines[NR] = $0}
+    NF {if (!first) first = NR; last = NR}
+    END {for (i = first; i <= last; i++) print lines[i]}
+')
 
 if [[ -z "$UNCHECKED" ]]; then
 	echo "All tasks were completed. Nothing to carry."
@@ -77,7 +93,7 @@ fi
 
 # Build the new today's file: insert unchecked tasks after ## TODO line,
 # before any existing content in that section
-tmpfile=$(mktemp)
+tmp_today=$(mktemp)
 awk -v tasks="$UNCHECKED" '
     /^## TODO/ {
         print
@@ -87,15 +103,15 @@ awk -v tasks="$UNCHECKED" '
         next
     }
     { print }
-' "$TODAY_FILE" >"$tmpfile"
-mv "$tmpfile" "$TODAY_FILE"
+' "$TODAY_FILE" >"$tmp_today"
+mv "$tmp_today" "$TODAY_FILE"
 
 echo "Carried unchecked tasks to today's note."
 
 # Mark unchecked tasks as carried in previous note
 # Replace "- [ ] <text>" with "- <text> → carried"
 # Also handle indented tasks
-tmpfile=$(mktemp)
+tmp_prev=$(mktemp)
 in_todo=0
 while IFS= read -r line; do
 	if [[ "$line" =~ ^"## TODO" ]]; then
@@ -110,8 +126,8 @@ while IFS= read -r line; do
 	else
 		echo "$line"
 	fi
-done <"$PREV_FILE" >"$tmpfile"
-mv "$tmpfile" "$PREV_FILE"
+done <"$PREV_FILE" >"$tmp_prev"
+mv "$tmp_prev" "$PREV_FILE"
 
 echo "Marked carried tasks in previous note."
 echo "Done!"
