@@ -16,8 +16,8 @@ TODAY_FILE="$DIARY_DIR/$TODAY.md"
 tmp_today=""
 tmp_prev=""
 cleanup() {
-	[[ -n "$tmp_today" && -f "$tmp_today" ]] && rm -f "$tmp_today"
-	[[ -n "$tmp_prev" && -f "$tmp_prev" ]] && rm -f "$tmp_prev"
+	if [[ -n "$tmp_today" && -f "$tmp_today" ]]; then rm -f "$tmp_today"; fi
+	if [[ -n "$tmp_prev" && -f "$tmp_prev" ]]; then rm -f "$tmp_prev"; fi
 }
 trap cleanup EXIT
 

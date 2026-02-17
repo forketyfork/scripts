@@ -4,3 +4,4 @@ __pycache__/
 artifact_downloads_state.json
 .DS_Store
 .tmp/
+.architect/
