@@ -15,9 +15,11 @@ TODAY_FILE="$DIARY_DIR/$TODAY.md"
 
 tmp_today=""
 tmp_prev=""
+tmp_tasks=""
 cleanup() {
 	if [[ -n "$tmp_today" && -f "$tmp_today" ]]; then rm -f "$tmp_today"; fi
 	if [[ -n "$tmp_prev" && -f "$tmp_prev" ]]; then rm -f "$tmp_prev"; fi
+	if [[ -n "$tmp_tasks" && -f "$tmp_tasks" ]]; then rm -f "$tmp_tasks"; fi
 }
 trap cleanup EXIT
 
@@ -73,6 +75,9 @@ if [[ -z "$UNCHECKED" ]]; then
 	exit 0
 fi
 
+tmp_tasks=$(mktemp)
+printf '%s\n' "$UNCHECKED" >"$tmp_tasks"
+
 # Create today's note from template if it doesn't exist
 if [[ ! -f "$TODAY_FILE" ]]; then
 	if [[ ! -f "$TEMPLATE" ]]; then
@@ -94,12 +99,15 @@ fi
 # Build the new today's file: insert unchecked tasks after ## TODO line,
 # before any existing content in that section
 tmp_today=$(mktemp)
-awk -v tasks="$UNCHECKED" '
-    /^## TODO/ {
+awk -v tasks_file="$tmp_tasks" '
+    !inserted && /^## TODO/ {
         print
         print ""
-        print tasks
-        found_todo=1
+        while ((getline task_line < tasks_file) > 0) {
+            print task_line
+        }
+        close(tasks_file)
+        inserted=1
         next
     }
     { print }
