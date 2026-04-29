@@ -95,7 +95,7 @@ get_initial_prompt() {
 
 recording_date=$(get_file_date "$filename")
 readonly recording_date
-readonly meetings_dir="$HOME/Zettelkasten/meetings"
+readonly meetings_dir="$HOME/rbyte/120-Meetings"
 readonly final_md_file="${meetings_dir}/${recording_date} ${basename_no_ext}.md"
 
 # Set up working directory and cleanup handler
