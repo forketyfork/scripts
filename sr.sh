@@ -95,7 +95,8 @@ get_initial_prompt() {
 
 recording_date=$(get_file_date "$filename")
 readonly recording_date
-readonly meetings_dir="$HOME/Zettelkasten/Interactions/Meetings"
+readonly zettelkasten_dir="${ZETTELKASTEN_DIR:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Zettelkasten}"
+readonly meetings_dir="${zettelkasten_dir}/Interactions/Meetings"
 readonly final_md_file="${meetings_dir}/${recording_date} ${basename_no_ext}.md"
 
 # Set up working directory and cleanup handler

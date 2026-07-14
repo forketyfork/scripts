@@ -4,9 +4,10 @@ set -euo pipefail
 # carry-tasks.sh — Move unchecked TODO tasks from previous daily note to today's note.
 #
 # Usage: carry-tasks.sh [VAULT_PATH]
-#   VAULT_PATH defaults to ~/Zettelkasten
+#   VAULT_PATH defaults to $ZETTELKASTEN_DIR, falling back to the iCloud Zettelkasten vault
 
-VAULT="${1:-$HOME/Zettelkasten}"
+readonly default_vault="${ZETTELKASTEN_DIR:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Zettelkasten}"
+VAULT="${1:-$default_vault}"
 DIARY_DIR="$VAULT/diary"
 TEMPLATE="$VAULT/templates/Daily Note.md"
 

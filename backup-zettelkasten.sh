@@ -23,7 +23,7 @@ EOF
 }
 
 # Configuration
-readonly vault_dir="$HOME/Zettelkasten"
+readonly vault_dir="${ZETTELKASTEN_DIR:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Zettelkasten}"
 timestamp=$(date +%F-%H%M)
 readonly timestamp
 readonly backup_name="zettelkasten-$timestamp.tar.gz.age"

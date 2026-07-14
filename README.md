@@ -145,7 +145,7 @@ This repository uses [Nix](https://nixos.org/) with [direnv](https://direnv.net/
    GITHUB_TOKEN=your_token_here
    
    # Zettelkasten vault directory (for backup scripts)
-   ZETTELKASTEN_DIR=$HOME/Documents/Zettelkasten
+   ZETTELKASTEN_DIR="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Zettelkasten"
    
    # Google Drive remote for rclone (configure with: rclone config)
    GDRIVE_REMOTE=gdrive:backups
