@@ -39,6 +39,7 @@
 - **decrypt-zettelkasten.sh**: Decrypts backups created by backup-zettelkasten.sh
 - **bookmarks.sh**: Extracts URLs from Safari Reading List using plutil
 - **artifact_downloads.py**: Monitors GitHub repositories for new artifact downloads, outputs timestamped messages with download counts
+- **open-prs.sh**: Lists all open GitHub PRs authored by a user or opened in their repositories, deduplicated and sorted by creation date descending
 
 ## artifact_downloads.py Configuration
 

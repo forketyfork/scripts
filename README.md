@@ -69,6 +69,12 @@ A collection of utility scripts for various tasks including audio processing, Sa
   - Creates reading journey timeline with start/end dates
   - Usage: `python convert_books.py <csv_file> <output_dir> [--delimiter=";"]`
 
+- **[open-prs.sh](open-prs.sh)**: Lists all currently open GitHub pull requests
+  - Combines PRs authored by a user with PRs opened in any of that user's repositories
+  - Deduplicates and sorts results by creation date, newest first
+  - Usage: `./open-prs.sh [GITHUB_USER]` (defaults to the currently authenticated `gh` user)
+  - Requires `gh` (authenticated) and `jq`
+
 - **[artifact_downloads.py](artifact_downloads.py)**: Monitors GitHub repositories for new artifact downloads
   - Checks repository releases every 60 seconds for download count changes
   - Outputs timestamped messages when new downloads are detected
